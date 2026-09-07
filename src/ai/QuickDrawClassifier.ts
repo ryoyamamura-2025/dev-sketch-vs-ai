@@ -57,7 +57,9 @@ function errorMessage(cause: unknown): string {
 }
 
 function ensureLiteRtRuntime(): Promise<void> {
-  runtimePromise ??= loadLiteRt(LITERT_WASM_BASE_URL)
+  runtimePromise ??= (async () => {
+    await loadLiteRt(LITERT_WASM_BASE_URL)
+  })()
   return runtimePromise
 }
 
