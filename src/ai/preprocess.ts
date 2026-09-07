@@ -41,6 +41,12 @@ function canvasPixelsToInput(canvas: HTMLCanvasElement, thicken = false): Float3
   return thickened
 }
 
+function invertForModel(values: Float32Array): Float32Array {
+  const inverted = new Float32Array(values.length)
+  for (let i = 0; i < values.length; i += 1) inverted[i] = 1 - values[i]
+  return inverted
+}
+
 /**
  * Convert normalized game strokes to the 28x28 bitmap format used by the
  * Quick Draw model. Drawing directly from strokes avoids making lines
@@ -48,7 +54,7 @@ function canvasPixelsToInput(canvas: HTMLCanvasElement, thicken = false): Float3
  */
 export function strokesToQuickDrawInput(strokes: Stroke[]): Float32Array {
   const points = strokes.flatMap((stroke) => stroke.points)
-  if (points.length === 0) return new Float32Array(MODEL_SIZE * MODEL_SIZE).fill(1)
+  if (points.length === 0) return new Float32Array(MODEL_SIZE * MODEL_SIZE)
 
   let minX = 1
   let minY = 1
@@ -97,7 +103,7 @@ export function strokesToQuickDrawInput(strokes: Stroke[]): Float32Array {
     ctx.stroke()
   }
 
-  return canvasPixelsToInput(canvas)
+  return invertForModel(canvasPixelsToInput(canvas))
 }
 
 /**
@@ -105,6 +111,10 @@ export function strokesToQuickDrawInput(strokes: Stroke[]): Float32Array {
  * the whole large square (which makes a centered doodle tiny), detect the ink
  * bounds, fit that region into a 22x22 box, center it, and restore model-scale
  * stroke thickness.
+ *
+ * Note: the distributed model card documents white=1 / black=0, but direct
+ * validation against Google's canonical Quick Draw numpy bitmaps shows that
+ * this TFLite artifact actually expects black background=0 / white stroke=1.
  */
 export function canvasToQuickDrawInput(source: HTMLCanvasElement): Float32Array {
   const sourceCtx = source.getContext('2d', { willReadFrequently: true })
@@ -131,7 +141,7 @@ export function canvasToQuickDrawInput(source: HTMLCanvasElement): Float32Array 
   }
 
   if (maxX < minX || maxY < minY) {
-    return new Float32Array(MODEL_SIZE * MODEL_SIZE).fill(1)
+    return new Float32Array(MODEL_SIZE * MODEL_SIZE)
   }
 
   const rawWidth = Math.max(1, maxX - minX + 1)
@@ -158,7 +168,7 @@ export function canvasToQuickDrawInput(source: HTMLCanvasElement): Float32Array 
   ctx.fillRect(0, 0, MODEL_SIZE, MODEL_SIZE)
   ctx.imageSmoothingEnabled = true
   ctx.drawImage(source, sx, sy, sw, sh, dx, dy, dw, dh)
-  return canvasPixelsToInput(canvas, true)
+  return invertForModel(canvasPixelsToInput(canvas, true))
 }
 
 export const preprocessCanvas = canvasToQuickDrawInput
