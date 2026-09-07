@@ -1,9 +1,8 @@
 import { CompiledModel, Tensor, loadAndCompile, loadLiteRt } from '@litertjs/core'
 import { MODEL_LABELS } from '../game/categories'
 
-const DEFAULT_MODEL_URL =
-  'https://huggingface.co/zarqankhn/quickdraw-345-tflite/resolve/main/quickdraw_model.tflite'
-const WASM_BASE_URL = 'https://cdn.jsdelivr.net/npm/@litertjs/core@2.5.3/wasm/'
+const DEFAULT_MODEL_URL = `${import.meta.env.BASE_URL}models/quickdraw_model.tflite`
+const WASM_BASE_URL = `${import.meta.env.BASE_URL}litert-wasm/`
 const EXPECTED_INPUT = [1, 28, 28, 1]
 const EXPECTED_OUTPUT = [1, 345]
 
@@ -24,7 +23,7 @@ export class QuickDrawClassifier {
   private model: CompiledModel | null = null
   readonly modelUrl: string
 
-  constructor(modelUrl = import.meta.env.VITE_QUICKDRAW_MODEL_URL || DEFAULT_MODEL_URL) {
+  constructor(modelUrl = import.meta.env.VITE_QUICKDRAW_MODEL_URL?.trim() || DEFAULT_MODEL_URL) {
     this.modelUrl = modelUrl
   }
 
