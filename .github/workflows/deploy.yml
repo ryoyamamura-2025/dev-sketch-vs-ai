@@ -31,12 +31,18 @@ jobs:
       - run: npm install --no-audit --no-fund
       - name: Stage AI runtime assets
         run: |
-          mkdir -p public/models public/litert-wasm
+          mkdir -p public/models public/litert-wasm public/tfjs public/tfjs-tflite/wasm
           cp -R node_modules/@litertjs/core/wasm/. public/litert-wasm/
+          cp node_modules/@tensorflow/tfjs/dist/tf.min.js public/tfjs/tf.min.js
+          cp node_modules/@tensorflow/tfjs-tflite/dist/tf-tflite.min.js public/tfjs-tflite/tf-tflite.min.js
+          cp -R node_modules/@tensorflow/tfjs-tflite/wasm/. public/tfjs-tflite/wasm/
           curl --fail --location --retry 3 --retry-delay 2 \
             "https://huggingface.co/zarqankhn/quickdraw-345-tflite/resolve/b02fde8d8732aed32bc9d8176c3dc4efda0333fb/quickdraw_model.tflite" \
             --output public/models/quickdraw_model.tflite
           test "$(wc -c < public/models/quickdraw_model.tflite)" -gt 8000000
+          test -s public/tfjs/tf.min.js
+          test -s public/tfjs-tflite/tf-tflite.min.js
+          find public/tfjs-tflite/wasm -type f -name '*.wasm' -print -quit | grep -q .
       - run: npm test
       - name: Validate runtime configuration
         run: |
