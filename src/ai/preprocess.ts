@@ -21,3 +21,6 @@ export function canvasToQuickDrawInput(source: HTMLCanvasElement): Float32Array 
   }
   return values
 }
+
+// Kept as the classifier-facing name used by the game hook.
+export const preprocessCanvas = canvasToQuickDrawInput
