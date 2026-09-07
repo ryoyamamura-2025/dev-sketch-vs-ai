@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { grayscaleToQuickDrawInput } from '../src/ai/preprocess'
 import { aiMessage, isAiWin, top3Enabled } from '../src/game/ai'
 import { CHILD_PRESET_IDS, MODEL_LABELS, choosePrompt } from '../src/game/categories'
 import { appendStrokePoints, clearStrokes, startStroke, undoLastStroke } from '../src/game/strokes'
@@ -14,6 +15,14 @@ describe('AI utilities', () => {
       { categoryId: 'dog', confidence: 0.11 },
       { categoryId: 'bear', confidence: 0.068 },
     ])
+  })
+
+  it('restores faint downscaled ink to full Quick Draw contrast', () => {
+    const grayscale = new Float32Array(28 * 28).fill(1)
+    grayscale[14 * 28 + 14] = 0.55
+    const input = grayscaleToQuickDrawInput(grayscale)
+    expect(input[14 * 28 + 14]).toBeCloseTo(1)
+    expect(input[0]).toBe(0)
   })
 
   it('maps exact message tier boundaries', () => {
