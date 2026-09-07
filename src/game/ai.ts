@@ -6,13 +6,22 @@ export function top3Enabled(
   enabledCategoryIds: string[],
 ): AiPrediction[] {
   const enabled = new Set(enabledCategoryIds)
-  const ranked: AiPrediction[] = []
+  const enabledRanked: AiPrediction[] = []
+  const rawRanked: AiPrediction[] = []
+
   for (let i = 0; i < labels.length && i < probabilities.length; i += 1) {
     const categoryId = labels[i]
-    if (!enabled.has(categoryId)) continue
-    ranked.push({ categoryId, confidence: Number(probabilities[i]) })
+    const prediction = { categoryId, confidence: Number(probabilities[i]) }
+    rawRanked.push(prediction)
+    if (enabled.has(categoryId)) enabledRanked.push(prediction)
   }
-  return ranked.sort((a, b) => b.confidence - a.confidence).slice(0, 3)
+
+  const enabledTop3 = enabledRanked.sort((a, b) => b.confidence - a.confidence).slice(0, 3)
+  const rawTop3 = rawRanked.sort((a, b) => b.confidence - a.confidence).slice(0, 3)
+
+  // Keep the enabled top3 first so game scoring semantics do not change.
+  // Append the unfiltered model top3 only for temporary UI diagnosis.
+  return [...enabledTop3, ...rawTop3]
 }
 
 export function aiMessage(confidence: number, labelJa: string): string {
