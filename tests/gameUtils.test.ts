@@ -5,7 +5,7 @@ import { appendStrokePoints, clearStrokes, startStroke, undoLastStroke } from '.
 import { remainingAfterElapsed } from '../src/game/timer'
 
 describe('AI utilities', () => {
-  it('ranks enabled categories first without renormalizing and appends raw top3 for diagnosis', () => {
+  it('ranks only enabled categories without renormalizing confidence', () => {
     const labels = ['cat', 'dog', 'bear', 'car']
     const probabilities = [0.18, 0.11, 0.068, 0.6]
     const top3 = top3Enabled(probabilities, labels, ['cat', 'dog', 'bear'])
@@ -13,9 +13,6 @@ describe('AI utilities', () => {
       { categoryId: 'cat', confidence: 0.18 },
       { categoryId: 'dog', confidence: 0.11 },
       { categoryId: 'bear', confidence: 0.068 },
-      { categoryId: 'car', confidence: 0.6 },
-      { categoryId: 'cat', confidence: 0.18 },
-      { categoryId: 'dog', confidence: 0.11 },
     ])
   })
 
