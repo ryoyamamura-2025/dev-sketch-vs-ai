@@ -5,6 +5,10 @@ const PADDING = 3
 const DRAW_SIZE = MODEL_SIZE - PADDING * 2
 const MODEL_LINE_WIDTH = 2.2
 
+type QuickDrawCanvas = HTMLCanvasElement & {
+  __quickDrawStrokes?: Stroke[]
+}
+
 function canvasPixelsToGrayscale(canvas: HTMLCanvasElement): Float32Array {
   const ctx = canvas.getContext('2d', { willReadFrequently: true })
   if (!ctx) throw new Error('2D canvas context is unavailable.')
@@ -67,6 +71,8 @@ export function grayscaleToQuickDrawInput(values: Float32Array, thicken = false)
 
 /**
  * Convert normalized game strokes directly to a crisp 28x28 Quick Draw bitmap.
+ * This is the preferred path for live game inference because it bypasses the
+ * display canvas, devicePixelRatio, CSS sizing and image resampling entirely.
  */
 export function strokesToQuickDrawInput(strokes: Stroke[]): Float32Array {
   const points = strokes.flatMap((stroke) => stroke.points)
@@ -124,10 +130,14 @@ export function strokesToQuickDrawInput(strokes: Stroke[]): Float32Array {
 
 /**
  * Convert the visible drawing canvas to the centered 28x28 bitmap expected by
- * the Quick Draw model. The drawing bounds are fitted into a 22x22 box, then
- * ink contrast is restored after downscaling.
+ * the Quick Draw model. Live DrawingCanvas instances expose their normalized
+ * stroke geometry, so use that first. The pixel-resampling path remains as a
+ * fallback for tests or any future canvas without stroke metadata.
  */
 export function canvasToQuickDrawInput(source: HTMLCanvasElement): Float32Array {
+  const directStrokes = (source as QuickDrawCanvas).__quickDrawStrokes
+  if (directStrokes) return strokesToQuickDrawInput(directStrokes)
+
   const sourceCtx = source.getContext('2d', { willReadFrequently: true })
   if (!sourceCtx) throw new Error('2D canvas context is unavailable.')
 
