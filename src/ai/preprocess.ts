@@ -5,7 +5,7 @@ const PADDING = 3
 const DRAW_SIZE = MODEL_SIZE - PADDING * 2
 const MODEL_LINE_WIDTH = 2.2
 
-function canvasPixelsToInput(canvas: HTMLCanvasElement, thicken = false): Float32Array {
+function canvasPixelsToGrayscale(canvas: HTMLCanvasElement): Float32Array {
   const ctx = canvas.getContext('2d', { willReadFrequently: true })
   if (!ctx) throw new Error('2D canvas context is unavailable.')
 
@@ -13,44 +13,60 @@ function canvasPixelsToInput(canvas: HTMLCanvasElement, thicken = false): Float3
   const values = new Float32Array(MODEL_SIZE * MODEL_SIZE)
   for (let i = 0; i < values.length; i += 1) {
     const offset = i * 4
+    const alpha = rgba[offset + 3] / 255
     const gray = 0.299 * rgba[offset] + 0.587 * rgba[offset + 1] + 0.114 * rgba[offset + 2]
-    values[i] = gray / 255
+    // Composite transparent pixels onto white before converting to grayscale.
+    values[i] = (gray * alpha + 255 * (1 - alpha)) / 255
   }
-
-  if (!thicken) return values
-
-  // The UI canvas is high-DPI. Even after fitting the drawing bounds, a
-  // visible UI stroke can become sub-pixel thin at 28x28. A 3x3 max filter on
-  // stroke darkness restores roughly the 2px stroke weight seen in Quick Draw
-  // bitmap samples without changing the drawing geometry.
-  const thickened = new Float32Array(values.length).fill(1)
-  for (let y = 0; y < MODEL_SIZE; y += 1) {
-    for (let x = 0; x < MODEL_SIZE; x += 1) {
-      let maxDarkness = 0
-      for (let dy = -1; dy <= 1; dy += 1) {
-        for (let dx = -1; dx <= 1; dx += 1) {
-          const nx = x + dx
-          const ny = y + dy
-          if (nx < 0 || ny < 0 || nx >= MODEL_SIZE || ny >= MODEL_SIZE) continue
-          maxDarkness = Math.max(maxDarkness, 1 - values[ny * MODEL_SIZE + nx])
-        }
-      }
-      thickened[y * MODEL_SIZE + x] = 1 - maxDarkness
-    }
-  }
-  return thickened
-}
-
-function invertForModel(values: Float32Array): Float32Array {
-  const inverted = new Float32Array(values.length)
-  for (let i = 0; i < values.length; i += 1) inverted[i] = 1 - values[i]
-  return inverted
+  return values
 }
 
 /**
- * Convert normalized game strokes to the 28x28 bitmap format used by the
- * Quick Draw model. Drawing directly from strokes avoids making lines
- * sub-pixel thin when the high-DPI UI canvas is downscaled to 28x28.
+ * Convert white-background/black-stroke grayscale pixels to the actual input
+ * polarity expected by this TFLite artifact: black background=0, white ink=1.
+ *
+ * Downscaling a large high-DPI canvas to 28x28 can turn a crisp black UI line
+ * into faint gray anti-aliased pixels. Quick Draw training bitmaps contain much
+ * stronger ink, so normalize the strongest observed ink back to 1.0 instead of
+ * feeding the model an almost-blank image.
+ */
+export function grayscaleToQuickDrawInput(values: Float32Array, thicken = false): Float32Array {
+  const source = thicken ? new Float32Array(values.length).fill(1) : values
+
+  if (thicken) {
+    for (let y = 0; y < MODEL_SIZE; y += 1) {
+      for (let x = 0; x < MODEL_SIZE; x += 1) {
+        let darkest = 1
+        for (let dy = -1; dy <= 1; dy += 1) {
+          for (let dx = -1; dx <= 1; dx += 1) {
+            const nx = x + dx
+            const ny = y + dy
+            if (nx < 0 || ny < 0 || nx >= MODEL_SIZE || ny >= MODEL_SIZE) continue
+            darkest = Math.min(darkest, values[ny * MODEL_SIZE + nx])
+          }
+        }
+        source[y * MODEL_SIZE + x] = darkest
+      }
+    }
+  }
+
+  let maxInk = 0
+  for (let i = 0; i < source.length; i += 1) {
+    maxInk = Math.max(maxInk, 1 - source[i])
+  }
+  if (maxInk < 0.01) return new Float32Array(values.length)
+
+  const output = new Float32Array(values.length)
+  for (let i = 0; i < source.length; i += 1) {
+    const ink = Math.max(0, 1 - source[i]) / maxInk
+    // Drop tiny resampling halos while retaining anti-aliased stroke edges.
+    output[i] = ink < 0.04 ? 0 : Math.min(1, ink)
+  }
+  return output
+}
+
+/**
+ * Convert normalized game strokes directly to a crisp 28x28 Quick Draw bitmap.
  */
 export function strokesToQuickDrawInput(strokes: Stroke[]): Float32Array {
   const points = strokes.flatMap((stroke) => stroke.points)
@@ -103,18 +119,13 @@ export function strokesToQuickDrawInput(strokes: Stroke[]): Float32Array {
     ctx.stroke()
   }
 
-  return invertForModel(canvasPixelsToInput(canvas))
+  return grayscaleToQuickDrawInput(canvasPixelsToGrayscale(canvas))
 }
 
 /**
- * Convert the visible drawing canvas to Quick Draw input. Rather than shrink
- * the whole large square (which makes a centered doodle tiny), detect the ink
- * bounds, fit that region into a 22x22 box, center it, and restore model-scale
- * stroke thickness.
- *
- * Note: the distributed model card documents white=1 / black=0, but direct
- * validation against Google's canonical Quick Draw numpy bitmaps shows that
- * this TFLite artifact actually expects black background=0 / white stroke=1.
+ * Convert the visible drawing canvas to the centered 28x28 bitmap expected by
+ * the Quick Draw model. The drawing bounds are fitted into a 22x22 box, then
+ * ink contrast is restored after downscaling.
  */
 export function canvasToQuickDrawInput(source: HTMLCanvasElement): Float32Array {
   const sourceCtx = source.getContext('2d', { willReadFrequently: true })
@@ -126,13 +137,13 @@ export function canvasToQuickDrawInput(source: HTMLCanvasElement): Float32Array 
   let maxX = -1
   let maxY = -1
 
-  // UI ink is #111 on white. Use a generous threshold so anti-aliased edge
-  // pixels participate in the bounds too.
   for (let y = 0; y < source.height; y += 1) {
     for (let x = 0; x < source.width; x += 1) {
       const offset = (y * source.width + x) * 4
+      const alpha = sourcePixels[offset + 3] / 255
       const gray = 0.299 * sourcePixels[offset] + 0.587 * sourcePixels[offset + 1] + 0.114 * sourcePixels[offset + 2]
-      if (gray >= 245) continue
+      const compositedGray = gray * alpha + 255 * (1 - alpha)
+      if (compositedGray >= 245) continue
       minX = Math.min(minX, x)
       minY = Math.min(minY, y)
       maxX = Math.max(maxX, x)
@@ -140,9 +151,7 @@ export function canvasToQuickDrawInput(source: HTMLCanvasElement): Float32Array 
     }
   }
 
-  if (maxX < minX || maxY < minY) {
-    return new Float32Array(MODEL_SIZE * MODEL_SIZE)
-  }
+  if (maxX < minX || maxY < minY) return new Float32Array(MODEL_SIZE * MODEL_SIZE)
 
   const rawWidth = Math.max(1, maxX - minX + 1)
   const rawHeight = Math.max(1, maxY - minY + 1)
@@ -168,7 +177,8 @@ export function canvasToQuickDrawInput(source: HTMLCanvasElement): Float32Array 
   ctx.fillRect(0, 0, MODEL_SIZE, MODEL_SIZE)
   ctx.imageSmoothingEnabled = true
   ctx.drawImage(source, sx, sy, sw, sh, dx, dy, dw, dh)
-  return invertForModel(canvasPixelsToInput(canvas, true))
+
+  return grayscaleToQuickDrawInput(canvasPixelsToGrayscale(canvas), true)
 }
 
 export const preprocessCanvas = canvasToQuickDrawInput
