@@ -29,6 +29,14 @@ jobs:
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
+      - name: Stage AI runtime assets
+        run: |
+          mkdir -p public/models public/litert-wasm
+          cp -R node_modules/@litertjs/core/wasm/. public/litert-wasm/
+          curl --fail --location --retry 3 --retry-delay 2 \
+            "https://huggingface.co/zarqankhn/quickdraw-345-tflite/resolve/b02fde8d8732aed32bc9d8176c3dc4efda0333fb/quickdraw_model.tflite" \
+            --output public/models/quickdraw_model.tflite
+          test "$(wc -c < public/models/quickdraw_model.tflite)" -gt 8000000
       - run: npm test
       - name: Validate runtime configuration
         run: |
