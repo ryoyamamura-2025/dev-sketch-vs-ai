@@ -13,6 +13,10 @@ interface DrawingCanvasProps {
   onStrokeEnd?: (strokeId: string, sequence: number, points: Point[]) => void
 }
 
+type QuickDrawCanvas = HTMLCanvasElement & {
+  __quickDrawStrokes?: Stroke[]
+}
+
 function normalizedPoint(event: React.PointerEvent<HTMLCanvasElement>): Point {
   const rect = event.currentTarget.getBoundingClientRect()
   return {
@@ -22,6 +26,11 @@ function normalizedPoint(event: React.PointerEvent<HTMLCanvasElement>): Point {
 }
 
 function redraw(canvas: HTMLCanvasElement, strokes: Stroke[]) {
+  // Keep the original normalized stroke geometry on the canvas object so the
+  // classifier can render directly into 28x28 instead of resampling the large
+  // high-DPI display bitmap.
+  ;(canvas as QuickDrawCanvas).__quickDrawStrokes = strokes
+
   const ctx = canvas.getContext('2d')
   if (!ctx) return
   ctx.fillStyle = '#fff'
