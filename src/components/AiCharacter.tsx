@@ -18,14 +18,10 @@ const FRAMES: Record<AiCharacterState, CharacterFrame[]> = {
     { file: 'thinking-3.webp', fallback: '💭', label: 'AIが考え中' },
   ],
   confident: [
-    { file: 'confident-1.webp', fallback: '🙂', label: 'AIが自信あり' },
-    { file: 'confident-2.webp', fallback: '😏', label: 'AIが自信あり' },
-    { file: 'confident-3.webp', fallback: '😎', label: 'AIが自信あり' },
+    { file: 'confident.webp', fallback: '😎', label: 'AIが自信あり' },
   ],
   unsure: [
-    { file: 'unsure-1.webp', fallback: '😕', label: 'AIが迷っている' },
-    { file: 'unsure-2.webp', fallback: '🤨', label: 'AIが迷っている' },
-    { file: 'unsure-3.webp', fallback: '😵‍💫', label: 'AIがわからない様子' },
+    { file: 'unsure.webp', fallback: '😵‍💫', label: 'AIがわからない様子' },
   ],
   victory: [
     { file: 'victory.webp', fallback: '🥳', label: 'AIが正解して喜んでいる' },
