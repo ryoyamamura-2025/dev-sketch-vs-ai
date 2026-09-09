@@ -1,0 +1,48 @@
+.ai-panel__body {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.ai-panel__copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.ai-panel .ai-message {
+  margin: 0 0 8px;
+}
+
+.ai-confidence {
+  display: inline-flex;
+  gap: 6px;
+  align-items: baseline;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: #f1efff;
+  color: #5147a9;
+  font-size: .78rem;
+  font-weight: 800;
+}
+
+.ai-confidence strong {
+  font-size: .92rem;
+}
+
+.ai-state-label {
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: .78rem;
+  font-weight: 750;
+}
+
+@media (max-width: 520px) {
+  .ai-panel__body {
+    gap: 12px;
+  }
+
+  .ai-panel .ai-message {
+    font-size: 1.08rem;
+  }
+}
