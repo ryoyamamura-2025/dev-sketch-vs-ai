@@ -22,10 +22,6 @@
   line-height: 1;
 }
 
-.ai-character--thinking {
-  animation: ai-thinking-bob 1.3s ease-in-out infinite;
-}
-
 .ai-character--victory {
   background: linear-gradient(180deg, #fff5c9, #ffe5a7);
   border-color: #f1cb65;
@@ -60,11 +56,6 @@
   border-radius: 16px;
   background: #fff7d9;
   font-weight: 900;
-}
-
-@keyframes ai-thinking-bob {
-  0%, 100% { transform: translateY(0) rotate(-1deg); }
-  50% { transform: translateY(-5px) rotate(1deg); }
 }
 
 @media (max-width: 520px) {
