@@ -10,7 +10,11 @@ interface StorageLike {
 
 function browserStorage(): StorageLike | null {
   if (typeof window === 'undefined') return null
-  return window.localStorage
+  try {
+    return window.localStorage
+  } catch {
+    return null
+  }
 }
 
 function defaultCategoryIds(): string[] {
