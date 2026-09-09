@@ -230,22 +230,26 @@ Quick Draw 345 categoriesをマスター集合として持つ。
 
 ### 6.2 Prediction display
 
-全端末に常時以下を表示する。
+全端末に以下を表示する。
 
+- AIキャラクター
 - AIのひとこと
-- Top 3 prediction labels
-- 各predictionのconfidence
+- 現在のTop1 predictionのみ
+- Top1の元のconfidence
+
+Top2・Top3はUIには表示しない。
+内部ではAI勝利判定や既存イベント互換のためTop3を保持してよい。
 
 表示例：
 
-- ねこ 18.4%
-- いぬ 11.2%
-- くま 6.8%
+- `ねこかな？`
+- `確信度 18.4%`
 
 ### 6.3 Confidence display semantics
 
-- 有効カテゴリ集合の中からTop3を選ぶ。
-- ただし表示confidenceは有効カテゴリだけで再正規化しない。
+- 有効カテゴリ集合の中からTop3を内部ランキングとして選ぶ。
+- UIに出すのはそのTop1だけ。
+- 表示confidenceは有効カテゴリだけで再正規化しない。
 - モデルの元の出力確率を表示する。
 
 ### 6.4 AI message tiers
@@ -259,6 +263,19 @@ Top1 confidenceで以下を切り替える。
 - `>=30%`: `○○だと思う！`
 
 このメッセージ境界とAI勝利しきい値は独立する。
+
+### 6.5 AI character states
+
+同一AIキャラクターを状態に応じて切り替える。
+
+- `idle`: 通常待機
+- `thinking`: 推論準備中、またはまだ自信が十分でない
+- `confident`: Top1 confidenceが高い
+- `unsure`: confidenceが極端に低い、またはAIエラー時
+- `victory`: AIがラウンドを先に当てた結果
+
+`thinking` は複数フレームを一定間隔で切り替え、簡単なアニメーションのように見せてよい。
+キャラクター画像はリポジトリ内の静的アセットとし、画像未配置・読み込み失敗時でもゲーム進行を止めない。
 
 ## 7. Drawing UX
 
@@ -368,8 +385,9 @@ All:
 
 - remaining time
 - scores including AI
+- AI character / current state
 - AI message
-- AI Top3 + confidence
+- AI Top1 + confidence
 
 ### Answering
 
@@ -388,6 +406,7 @@ Drawer only:
 - prompt reveal
 - round winner or timeout
 - current scores
+- AI勝利時はvictory状態のAIキャラクター
 
 Host only:
 
@@ -451,7 +470,7 @@ The PoC succeeds when multiple family devices can:
 3. Keep the prompt private to the drawer.
 4. Show drawing strokes on answerer devices in near real time.
 5. Run on-device AI inference about once per second.
-6. Show Top3 and confidence on all devices.
+6. Show the AI's current Top1/confidence and character state on all devices.
 7. Buzz before the AI.
 8. Pause correctly for spoken answer confirmation.
 9. Resume after an incorrect answer.
