@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { AiCharacterState } from '../game/ai'
 import './AiCharacter.css'
 
@@ -18,31 +18,32 @@ const FRAMES: Record<AiCharacterState, CharacterFrame[]> = {
     { file: 'thinking-3.webp', fallback: '💭', label: 'AIが考え中' },
   ],
   confident: [
-    { file: 'confident.webp', fallback: '😎', label: 'AIが自信あり' },
+    { file: 'confident-1.webp', fallback: '🙂', label: 'AIが自信あり' },
+    { file: 'confident-2.webp', fallback: '😏', label: 'AIが自信あり' },
+    { file: 'confident-3.webp', fallback: '😎', label: 'AIが自信あり' },
   ],
   unsure: [
-    { file: 'unsure.webp', fallback: '😵‍💫', label: 'AIがわからない様子' },
+    { file: 'unsure-1.webp', fallback: '😕', label: 'AIが迷っている' },
+    { file: 'unsure-2.webp', fallback: '🤨', label: 'AIが迷っている' },
+    { file: 'unsure-3.webp', fallback: '😵‍💫', label: 'AIがわからない様子' },
   ],
   victory: [
     { file: 'victory.webp', fallback: '🥳', label: 'AIが正解して喜んでいる' },
   ],
 }
 
-export function AiCharacter({ state, compact = false }: { state: AiCharacterState; compact?: boolean }) {
+export function AiCharacter({
+  state,
+  frameStep = 0,
+  compact = false,
+}: {
+  state: AiCharacterState
+  frameStep?: number
+  compact?: boolean
+}) {
   const frames = FRAMES[state]
-  const [frameIndex, setFrameIndex] = useState(0)
   const [failedSources, setFailedSources] = useState<Set<string>>(() => new Set())
-
-  useEffect(() => {
-    setFrameIndex(0)
-    if (frames.length <= 1) return undefined
-    const id = window.setInterval(() => {
-      setFrameIndex((current) => (current + 1) % frames.length)
-    }, 650)
-    return () => window.clearInterval(id)
-  }, [frames])
-
-  const frame = frames[frameIndex % frames.length]
+  const frame = frames[Math.abs(frameStep) % frames.length]
   const src = useMemo(
     () => `${import.meta.env.BASE_URL}ai-character/${frame.file}`,
     [frame.file],

@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { AiCharacter } from './AiCharacter'
 import { aiCharacterState, aiMessage } from '../game/ai'
 import { categoryLabelJa } from '../game/categories'
@@ -13,6 +14,7 @@ const STATE_LABELS = {
 } as const
 
 export function AiPanel({ top3, loading, error }: { top3: AiPrediction[]; loading?: boolean; error?: string | null }) {
+  const [poseStep, setPoseStep] = useState(0)
   const top1 = top3[0]
   const visualState = aiCharacterState({
     confidence: top1?.confidence,
@@ -25,11 +27,19 @@ export function AiPanel({ top3, loading, error }: { top3: AiPrediction[]; loadin
       ? 'うーん、考え中…'
       : aiMessage(top1.confidence, categoryLabelJa(top1.categoryId))
 
+  useEffect(() => {
+    if (top3.length === 0) {
+      setPoseStep(0)
+      return
+    }
+    setPoseStep((current) => current + 1)
+  }, [top3])
+
   return (
     <section className="panel ai-panel" aria-label="AIの予想">
       <div className="panel-title">AIの予想</div>
       <div className="ai-panel__body">
-        <AiCharacter state={visualState} />
+        <AiCharacter state={visualState} frameStep={poseStep} />
         <div className="ai-panel__copy">
           <div className="ai-message">{message}</div>
           {top1 && !error ? (
