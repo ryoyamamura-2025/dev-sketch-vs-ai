@@ -2,8 +2,20 @@ import { describe, expect, it } from 'vitest'
 import { grayscaleToQuickDrawInput } from '../src/ai/preprocess'
 import { aiMessage, isAiWin, top3Enabled } from '../src/game/ai'
 import { CHILD_PRESET_IDS, MODEL_LABELS, choosePrompt } from '../src/game/categories'
+import { loadEnabledCategoryIds, saveEnabledCategoryIds } from '../src/game/settingsStorage'
 import { appendStrokePoints, clearStrokes, startStroke, undoLastStroke } from '../src/game/strokes'
 import { remainingAfterElapsed } from '../src/game/timer'
+
+function memoryStorage(initialValue: string | null) {
+  let value = initialValue
+  return {
+    getItem: () => value,
+    setItem: (_key: string, nextValue: string) => {
+      value = nextValue
+    },
+    read: () => value,
+  }
+}
 
 describe('AI utilities', () => {
   it('ranks only enabled categories without renormalizing confidence', () => {
@@ -50,6 +62,29 @@ describe('categories', () => {
   it('avoids used prompts until all enabled prompts are exhausted', () => {
     expect(choosePrompt(['cat', 'dog'], ['cat'], () => 0)).toBe('dog')
     expect(['cat', 'dog']).toContain(choosePrompt(['cat', 'dog'], ['cat', 'dog'], () => 0.99))
+  })
+})
+
+describe('prompt category persistence', () => {
+  it('restores saved categories, removes duplicates, and ignores removed model ids', () => {
+    const storage = memoryStorage(JSON.stringify(['cat', 'dog', 'missing-category', 'cat']))
+    expect(loadEnabledCategoryIds(storage)).toEqual(['cat', 'dog'])
+  })
+
+  it('keeps an explicitly saved empty selection', () => {
+    const storage = memoryStorage(JSON.stringify([]))
+    expect(loadEnabledCategoryIds(storage)).toEqual([])
+  })
+
+  it('falls back to the child preset when saved data is corrupt', () => {
+    const storage = memoryStorage('{not-json')
+    expect(loadEnabledCategoryIds(storage)).toEqual([...CHILD_PRESET_IDS])
+  })
+
+  it('saves only valid unique model ids', () => {
+    const storage = memoryStorage(null)
+    saveEnabledCategoryIds(['cat', 'missing-category', 'cat', 'dog'], storage)
+    expect(storage.read()).toBe(JSON.stringify(['cat', 'dog']))
   })
 })
 
