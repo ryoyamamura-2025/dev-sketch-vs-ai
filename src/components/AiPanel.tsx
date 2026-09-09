@@ -1,30 +1,47 @@
-import { aiMessage } from '../game/ai'
+import { AiCharacter } from './AiCharacter'
+import { aiCharacterState, aiMessage } from '../game/ai'
 import { categoryLabelJa } from '../game/categories'
 import type { AiPrediction } from '../types/game'
+import './AiPanel.css'
+
+const STATE_LABELS = {
+  idle: '待機中',
+  thinking: '考え中…',
+  confident: '自信あり！',
+  unsure: 'わからない…',
+  victory: '正解！',
+} as const
 
 export function AiPanel({ top3, loading, error }: { top3: AiPrediction[]; loading?: boolean; error?: string | null }) {
   const top1 = top3[0]
+  const visualState = aiCharacterState({
+    confidence: top1?.confidence,
+    loading,
+    error: Boolean(error),
+  })
   const message = error
     ? 'AIを準備できませんでした'
-    : loading
-      ? 'AIが準備中…'
-      : top1
-        ? aiMessage(top1.confidence, categoryLabelJa(top1.categoryId))
-        : 'うーん、わからない…'
+    : loading || !top1
+      ? 'うーん、考え中…'
+      : aiMessage(top1.confidence, categoryLabelJa(top1.categoryId))
 
   return (
     <section className="panel ai-panel" aria-label="AIの予想">
-      <div className="panel-title">🤖 AIの予想</div>
-      <div className="ai-message">{message}</div>
-      {error ? <div className="inline-error">{error}</div> : null}
-      <ol className="prediction-list">
-        {top3.map((prediction) => (
-          <li key={prediction.categoryId}>
-            <span>{categoryLabelJa(prediction.categoryId)}</span>
-            <strong>{(prediction.confidence * 100).toFixed(1)}%</strong>
-          </li>
-        ))}
-      </ol>
+      <div className="panel-title">AIの予想</div>
+      <div className="ai-panel__body">
+        <AiCharacter state={visualState} />
+        <div className="ai-panel__copy">
+          <div className="ai-message">{message}</div>
+          {top1 && !error ? (
+            <div className="ai-confidence">
+              <span>確信度</span>
+              <strong>{(top1.confidence * 100).toFixed(1)}%</strong>
+            </div>
+          ) : null}
+          <div className="ai-state-label">{STATE_LABELS[visualState]}</div>
+          {error ? <div className="inline-error">{error}</div> : null}
+        </div>
+      </div>
     </section>
   )
 }
