@@ -40,6 +40,14 @@
   font-size: 1.8rem;
 }
 
+.score-chip__ai-name {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+}
+
 .ai-victory-strip {
   width: 100%;
   min-width: 100%;
@@ -67,5 +75,14 @@
 
   .ai-character__fallback {
     font-size: 3.2rem;
+  }
+
+  .ai-character--compact {
+    width: 44px;
+    border-radius: 12px;
+  }
+
+  .ai-character--compact .ai-character__fallback {
+    font-size: 1.55rem;
   }
 }
