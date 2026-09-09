@@ -148,7 +148,7 @@ export function acceptBuzz(
 ): HostGameState {
   if (state.phase !== 'drawing' || state.roundId !== roundId) return state
   if (senderId !== buzzPlayerId || buzzPlayerId === state.currentDrawerId) return state
-  const player = state.players.find((item) => item.playerId === buzzPlayerId && player.connected)
+  const player = state.players.find((item) => item.playerId === buzzPlayerId && item.connected)
   if (!player || !state.roundEligiblePlayerIds.includes(buzzPlayerId)) return state
   return {
     ...state,
