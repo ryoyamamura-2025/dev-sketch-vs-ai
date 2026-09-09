@@ -79,10 +79,13 @@ The planned MVP classifier is a Quick Draw 345-class TFLite model running in the
 
 - Inference starts after the first stroke.
 - Run inference approximately once per second while phase is `drawing`.
-- Display Top 3 predictions and their original model confidence values.
+- UI displays only the enabled-category Top 1 prediction and its original model confidence value.
+- The internal Top 3 ranking may remain for transport and AI-win logic; hiding Top 2/3 is a presentation change only.
 - Restrict competition/ranking to currently enabled game categories, but do not renormalize displayed confidence values across that subset.
 - Default AI win threshold is 15%, configurable before the game.
 - AI wins a round only when enabled-category Top 1 equals the private prompt and its original confidence reaches the configured threshold.
+- The AI opponent has visual states for idle, thinking, confident, unsure, and victory.
+- Thinking may rotate through multiple character frames; missing character assets must fall back safely without blocking the game.
 
 Treat the concrete third-party model artifact as a replaceable dependency. Before locking its input tensor shape, dtype, normalization, labels, or runtime APIs into production code, verify the actual artifact/metadata used by the repository.
 
@@ -119,7 +122,7 @@ The first playable version is successful when multiple family devices can:
 3. show the prompt only on the drawer device,
 4. stream drawing strokes in near real time,
 5. run local AI guesses roughly once per second,
-6. display AI Top 3/confidences to everyone,
+6. display the AI's current Top 1/confidence with a clear opponent-character state,
 7. let a player buzz before the AI,
 8. pause and resume correctly after an incorrect spoken answer,
 9. award points to either a human player or AI,
