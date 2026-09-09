@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { grayscaleToQuickDrawInput } from '../src/ai/preprocess'
 import { aiMessage, isAiWin, top3Enabled } from '../src/game/ai'
-import { CHILD_PRESET_IDS, MODEL_LABELS, choosePrompt } from '../src/game/categories'
+import { CHILD_PRESET_IDS, MODEL_LABELS, QUICK_DRAW_CATEGORIES, choosePrompt } from '../src/game/categories'
+import { normalizeCategoryLabelsToHiragana } from '../src/game/categoryDisplay'
 import { loadEnabledCategoryIds, saveEnabledCategoryIds } from '../src/game/settingsStorage'
 import { appendStrokePoints, clearStrokes, startStroke, undoLastStroke } from '../src/game/strokes'
 import { remainingAfterElapsed } from '../src/game/timer'
@@ -57,6 +58,19 @@ describe('categories', () => {
     expect(MODEL_LABELS).toHaveLength(345)
     expect(CHILD_PRESET_IDS).toHaveLength(72)
     expect(new Set(MODEL_LABELS).size).toBe(345)
+  })
+
+  it('normalizes all 345 display labels to hiragana without changing model ids', () => {
+    const idsBefore = QUICK_DRAW_CATEGORIES.map((category) => category.id)
+    normalizeCategoryLabelsToHiragana()
+
+    const invalidLabels = QUICK_DRAW_CATEGORIES
+      .filter((category) => /[\u3400-\u9fff\u30a1-\u30fa\u30fd-\u30ffA-Za-z]/u.test(category.ja))
+      .map((category) => `${category.id}: ${category.ja}`)
+
+    expect(QUICK_DRAW_CATEGORIES.map((category) => category.id)).toEqual(idsBefore)
+    expect(QUICK_DRAW_CATEGORIES).toHaveLength(345)
+    expect(invalidLabels).toEqual([])
   })
 
   it('avoids used prompts until all enabled prompts are exhausted', () => {
