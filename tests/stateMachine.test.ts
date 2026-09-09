@@ -26,6 +26,11 @@ function readyState(): HostGameState {
 }
 
 describe('host authority state machine', () => {
+  it('starts new rooms with a 45% AI win threshold', () => {
+    const state = createInitialHostState('123456', { playerId: host.playerId, name: host.name, isHost: true })
+    expect(state.settings.aiWinThreshold).toBe(0.45)
+  })
+
   it('progresses through ready, drawing, answering, result and next round', () => {
     let state = readyState()
     expect(state.phase).toBe('ready')

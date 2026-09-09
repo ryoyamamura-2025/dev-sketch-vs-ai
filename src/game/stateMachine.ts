@@ -11,7 +11,7 @@ import type {
 export const DEFAULT_SETTINGS: GameSettings = {
   winsToFinish: 3,
   roundTimeSec: 120,
-  aiWinThreshold: 0.15,
+  aiWinThreshold: 0.45,
   enabledCategoryIds: [...CHILD_PRESET_IDS],
 }
 
@@ -42,7 +42,7 @@ export function normalizeSettings(settings: GameSettings): GameSettings {
   return {
     winsToFinish,
     roundTimeSec: clampRoundTimeSec(settings.roundTimeSec),
-    aiWinThreshold: Math.min(1, Math.max(0, Number.isFinite(settings.aiWinThreshold) ? settings.aiWinThreshold : 0.15)),
+    aiWinThreshold: Math.min(1, Math.max(0, Number.isFinite(settings.aiWinThreshold) ? settings.aiWinThreshold : 0.45)),
     enabledCategoryIds: [...new Set(settings.enabledCategoryIds)],
   }
 }
