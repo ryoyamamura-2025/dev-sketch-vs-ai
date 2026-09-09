@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { grayscaleToQuickDrawInput } from '../src/ai/preprocess'
-import { aiMessage, isAiWin, top3Enabled } from '../src/game/ai'
+import { aiCharacterState, aiMessage, isAiWin, top3Enabled } from '../src/game/ai'
 import { CHILD_PRESET_IDS, MODEL_LABELS, QUICK_DRAW_CATEGORIES, choosePrompt } from '../src/game/categories'
 import { normalizeCategoryLabelsToHiragana } from '../src/game/categoryDisplay'
 import { loadEnabledCategoryIds, saveEnabledCategoryIds } from '../src/game/settingsStorage'
@@ -44,6 +44,16 @@ describe('AI utilities', () => {
     expect(aiMessage(0.08, 'ねこ')).toBe('ねこかな？')
     expect(aiMessage(0.15, 'ねこ')).toBe('ねこな気がする！')
     expect(aiMessage(0.3, 'ねこ')).toBe('ねこだと思う！')
+  })
+
+  it('maps AI character state without changing AI win logic', () => {
+    expect(aiCharacterState({ loading: true })).toBe('thinking')
+    expect(aiCharacterState({ confidence: 0.02 })).toBe('unsure')
+    expect(aiCharacterState({ confidence: 0.12 })).toBe('thinking')
+    expect(aiCharacterState({ confidence: 0.3 })).toBe('confident')
+    expect(aiCharacterState({ confidence: 0.8, paused: true })).toBe('idle')
+    expect(aiCharacterState({ confidence: 0.8, winner: true })).toBe('victory')
+    expect(aiCharacterState({ confidence: 0.8, error: true })).toBe('unsure')
   })
 
   it('wins only when enabled top1 matches the prompt and threshold', () => {
