@@ -332,6 +332,9 @@ export default function App() {
         <section className="panel result-card">
           <div className="phase-icon">{state.roundWinner === 'AI' ? '🤖' : state.roundWinner ? '🎉' : '⏰'}</div>
           <h2>{resultText}</h2>
+          {game.strokes.length > 0 ? (
+            <DrawingCanvas strokes={game.strokes} editable={false} canvasRef={game.canvasRef} paused />
+          ) : null}
           {state.revealedPromptId ? (
             <div className="reveal-line">お題：<strong>{categoryLabelJa(state.revealedPromptId)}</strong></div>
           ) : state.roundEndReason === 'drawer_disconnected' ? (
