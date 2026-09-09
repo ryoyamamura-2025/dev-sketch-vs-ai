@@ -182,6 +182,7 @@ export class QuickDrawClassifier {
     } catch (fallbackFailure) {
       throw new Error(
         `AI runtime failed. LiteRT: ${errorMessage(liteRtFailure)} / TFJS-TFLite: ${errorMessage(fallbackFailure)}`,
+        { cause: fallbackFailure },
       )
     }
   }
