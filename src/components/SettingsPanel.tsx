@@ -1,4 +1,6 @@
+import { useEffect, useRef, useState } from 'react'
 import { CHILD_PRESET_IDS, QUICK_DRAW_CATEGORIES } from '../game/categories'
+import { loadEnabledCategoryIds, saveEnabledCategoryIds } from '../game/settingsStorage'
 import type { GameSettings } from '../types/game'
 
 interface Props {
@@ -7,12 +9,57 @@ interface Props {
   validationError: string | null
 }
 
+function sameCategoryIds(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((id, index) => id === b[index])
+}
+
 export function SettingsPanel({ value, onChange, validationError }: Props) {
+  const [roundTimeInput, setRoundTimeInput] = useState(() => String(value.roundTimeSec))
+  const [aiThresholdInput, setAiThresholdInput] = useState(() => String(Math.round(value.aiWinThreshold * 100)))
+  const restoredCategories = useRef(false)
+
+  useEffect(() => {
+    setRoundTimeInput(String(value.roundTimeSec))
+  }, [value.roundTimeSec])
+
+  useEffect(() => {
+    setAiThresholdInput(String(Math.round(value.aiWinThreshold * 100)))
+  }, [value.aiWinThreshold])
+
+  useEffect(() => {
+    if (restoredCategories.current) return
+    restoredCategories.current = true
+    const savedCategoryIds = loadEnabledCategoryIds()
+    if (sameCategoryIds(savedCategoryIds, value.enabledCategoryIds)) return
+    onChange({ ...value, enabledCategoryIds: savedCategoryIds })
+  }, [onChange, value])
+
+  const updateCategories = (enabledCategoryIds: string[]) => {
+    saveEnabledCategoryIds(enabledCategoryIds)
+    onChange({ ...value, enabledCategoryIds })
+  }
+
   const setEnabled = (id: string, checked: boolean) => {
     const enabled = new Set(value.enabledCategoryIds)
     if (checked) enabled.add(id)
     else enabled.delete(id)
-    onChange({ ...value, enabledCategoryIds: [...enabled] })
+    updateCategories([...enabled])
+  }
+
+  const updateRoundTimeInput = (raw: string) => {
+    setRoundTimeInput(raw)
+    if (raw.trim() === '') return
+    const next = Number(raw)
+    if (!Number.isFinite(next) || next < 10 || next > 600) return
+    onChange({ ...value, roundTimeSec: next })
+  }
+
+  const updateAiThresholdInput = (raw: string) => {
+    setAiThresholdInput(raw)
+    if (raw.trim() === '') return
+    const next = Number(raw)
+    if (!Number.isFinite(next) || next < 0 || next > 100) return
+    onChange({ ...value, aiWinThreshold: next / 100 })
   }
 
   return (
@@ -36,8 +83,9 @@ export function SettingsPanel({ value, onChange, validationError }: Props) {
             type="number"
             min={10}
             max={600}
-            value={value.roundTimeSec}
-            onChange={(event) => onChange({ ...value, roundTimeSec: Number(event.target.value) })}
+            value={roundTimeInput}
+            onChange={(event) => updateRoundTimeInput(event.target.value)}
+            onBlur={() => setRoundTimeInput(String(value.roundTimeSec))}
           />
         </label>
         <label>
@@ -47,19 +95,20 @@ export function SettingsPanel({ value, onChange, validationError }: Props) {
             min={0}
             max={100}
             step={1}
-            value={Math.round(value.aiWinThreshold * 100)}
-            onChange={(event) => onChange({ ...value, aiWinThreshold: Number(event.target.value) / 100 })}
+            value={aiThresholdInput}
+            onChange={(event) => updateAiThresholdInput(event.target.value)}
+            onBlur={() => setAiThresholdInput(String(Math.round(value.aiWinThreshold * 100)))}
           />
         </label>
       </div>
       <div className="category-toolbar">
-        <button type="button" onClick={() => onChange({ ...value, enabledCategoryIds: [...CHILD_PRESET_IDS] })}>
+        <button type="button" onClick={() => updateCategories([...CHILD_PRESET_IDS])}>
           こども向け72に戻す
         </button>
-        <button type="button" onClick={() => onChange({ ...value, enabledCategoryIds: QUICK_DRAW_CATEGORIES.map((c) => c.id) })}>
+        <button type="button" onClick={() => updateCategories(QUICK_DRAW_CATEGORIES.map((c) => c.id))}>
           すべて選択
         </button>
-        <button type="button" onClick={() => onChange({ ...value, enabledCategoryIds: [] })}>
+        <button type="button" onClick={() => updateCategories([])}>
           すべて解除
         </button>
       </div>
