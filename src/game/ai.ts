@@ -1,5 +1,7 @@
 import type { AiPrediction } from '../types/game'
 
+export type AiCharacterState = 'idle' | 'thinking' | 'confident' | 'unsure' | 'victory'
+
 export function top3Enabled(
   probabilities: ArrayLike<number>,
   labels: readonly string[],
@@ -21,6 +23,28 @@ export function aiMessage(confidence: number, labelJa: string): string {
   if (confidence < 0.15) return `${labelJa}かな？`
   if (confidence < 0.3) return `${labelJa}な気がする！`
   return `${labelJa}だと思う！`
+}
+
+export function aiCharacterState({
+  confidence,
+  loading = false,
+  error = false,
+  paused = false,
+  winner = false,
+}: {
+  confidence?: number
+  loading?: boolean
+  error?: boolean
+  paused?: boolean
+  winner?: boolean
+}): AiCharacterState {
+  if (winner) return 'victory'
+  if (error) return 'unsure'
+  if (paused) return 'idle'
+  if (loading || confidence === undefined) return 'thinking'
+  if (confidence < 0.03) return 'unsure'
+  if (confidence >= 0.3) return 'confident'
+  return 'thinking'
 }
 
 export function isAiWin(
