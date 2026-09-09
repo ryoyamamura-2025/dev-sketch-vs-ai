@@ -20,7 +20,10 @@ export function Scoreboard({ state }: { state: HostGameState }) {
           </div>
         ))}
         <div className="score-chip score-chip--ai">
-          <span>AI <AiCharacter state="idle" compact /></span>
+          <div className="score-chip__ai-name">
+            <AiCharacter state="idle" compact />
+            <span>AI</span>
+          </div>
           <strong>{state.aiScore}</strong>
         </div>
       </section>
