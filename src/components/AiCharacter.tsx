@@ -3,28 +3,31 @@ import type { AiCharacterState } from '../game/ai'
 import './AiCharacter.css'
 
 interface CharacterFrame {
-  file: string
+  spriteIndex: number
   fallback: string
   label: string
 }
 
+const SPRITE_FILE = 'character-sprite.png'
+const SPRITE_FRAME_COUNT = 7
+
 const FRAMES: Record<AiCharacterState, CharacterFrame[]> = {
   idle: [
-    { file: 'idle.webp', fallback: '🤖', label: 'AIが待機中' },
+    { spriteIndex: 0, fallback: '🤖', label: 'AIが待機中' },
   ],
   thinking: [
-    { file: 'thinking-1.webp', fallback: '🤔', label: 'AIが考え中' },
-    { file: 'thinking-2.webp', fallback: '🧐', label: 'AIが考え中' },
-    { file: 'thinking-3.webp', fallback: '💭', label: 'AIが考え中' },
+    { spriteIndex: 1, fallback: '🤔', label: 'AIが考え中' },
+    { spriteIndex: 2, fallback: '🧐', label: 'AIが考え中' },
+    { spriteIndex: 3, fallback: '💭', label: 'AIが考え中' },
   ],
   confident: [
-    { file: 'confident.webp', fallback: '😎', label: 'AIが自信あり' },
+    { spriteIndex: 5, fallback: '😎', label: 'AIが自信あり' },
   ],
   unsure: [
-    { file: 'unsure.webp', fallback: '😵‍💫', label: 'AIがわからない様子' },
+    { spriteIndex: 4, fallback: '😵‍💫', label: 'AIがわからない様子' },
   ],
   victory: [
-    { file: 'victory.webp', fallback: '🥳', label: 'AIが正解して喜んでいる' },
+    { spriteIndex: 6, fallback: '🥳', label: 'AIが正解して喜んでいる' },
   ],
 }
 
@@ -38,28 +41,25 @@ export function AiCharacter({
   compact?: boolean
 }) {
   const frames = FRAMES[state]
-  const [failedSources, setFailedSources] = useState<Set<string>>(() => new Set())
+  const [failed, setFailed] = useState(false)
   const frame = frames[Math.abs(frameStep) % frames.length]
   const src = useMemo(
-    () => `${import.meta.env.BASE_URL}ai-character/${frame.file}`,
-    [frame.file],
+    () => `${import.meta.env.BASE_URL}ai-character/${SPRITE_FILE}`,
+    [],
   )
-  const failed = failedSources.has(src)
 
   return (
     <div className={`ai-character ai-character--${state}${compact ? ' ai-character--compact' : ''}`} aria-label={frame.label}>
       {!failed ? (
         <img
-          className="ai-character__image"
+          className="ai-character__image ai-character__image--sprite"
           src={src}
           alt={frame.label}
-          onError={() => {
-            setFailedSources((current) => {
-              const next = new Set(current)
-              next.add(src)
-              return next
-            })
+          style={{
+            width: `${SPRITE_FRAME_COUNT * 100}%`,
+            left: `-${frame.spriteIndex * 100}%`,
           }}
+          onError={() => setFailed(true)}
         />
       ) : (
         <span className="ai-character__fallback" aria-hidden="true">{frame.fallback}</span>
