@@ -5,6 +5,7 @@
   display: grid;
   place-items: center;
   overflow: hidden;
+  position: relative;
   background: linear-gradient(180deg, #f4f0ff, #eef3ff);
   border: 1px solid #ddd8ff;
   box-shadow: inset 0 0 0 1px rgba(255,255,255,.8);
@@ -12,9 +13,15 @@
 }
 
 .ai-character__image {
-  width: 100%;
   height: 100%;
   object-fit: contain;
+}
+
+.ai-character__image--sprite {
+  position: absolute;
+  top: 0;
+  max-width: none;
+  display: block;
 }
 
 .ai-character__fallback {
